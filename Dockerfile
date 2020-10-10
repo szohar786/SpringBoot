@@ -1,7 +1,5 @@
-FROM openjdk:8-jdk-alpine
-VOLUME /tmp
-EXPOSE 8888
-ARG JAR_FILE=/target/*.jar
-COPY ${JAR_FILE} springboot.jar
-MAINTAINER "szohar786@gmail.com"
-ENTRYPOINT ["java", "-jar", "springboot.jar"]
+FROM java:8-jdk-alpine
+COPY ./target/devops-test-app-0.0.1-SNAPSHOT.jar /usr/app/
+WORKDIR /usr/app
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "devops-test-app-0.0.1-SNAPSHOT.jar"]
