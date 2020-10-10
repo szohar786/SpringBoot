@@ -1,0 +1,42 @@
+node{
+    
+    stage('Checkout GIT Project'){
+        properties([pipelineTriggers([githubPush()])])
+        git credentialsId: 'gitID', url: 'https://github.com/szohar786/SpringBoot.git'
+    }
+    
+    stage('build and Test'){
+       def MAVEN_HOME = tool name: 'maven-3', type: 'maven'
+       sh "${MAVEN_HOME}/bin/mvn package"
+    }
+    stage('SonarQube Analysis') {
+        def mvnHome =  tool name: 'maven-3', type: 'maven'
+        withSonarQubeEnv('sonar-6') { 
+         sh "${mvnHome}/bin/mvn sonar:sonar"
+        }
+    }
+    stage('docker build'){
+        sh "/usr/bin/docker build -t skhanaeie/springboot:3 ."
+    }
+    stage('Push docker image'){
+        withCredentials([usernamePassword(credentialsId: 'dockerJEN', passwordVariable: 'dockerPWD', usernameVariable: 'dockerUSR')]) {
+           sh "/usr/bin/docker login -u skhanaeie -p ${dockerPWD}"
+        }
+        sh "/usr/bin/docker push skhanaeie/springboot:3"
+    }
+    stage('Run docker image'){
+        sh "/usr/bin/docker run -p 8083:8080 -d skhanaeie/springboot:3"
+    }
+    post {
+            failure {
+                mail bcc: '', body: '''HI,
+    
+    Your build got failed, please check.
+    
+    Thanks,
+    Jenkins BOT ''', cc: '', from: '', replyTo: '', subject: 'BUILD FAILURE NOTIFICATION', to: 'szohar786@gmail.com'
+            }
+    }    
+     
+    }
+
